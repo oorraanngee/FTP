@@ -112,25 +112,44 @@ def analyze_and_fix(lines):
                         errors_dict[idx] = {"original": lines[idx].rstrip('\n'), "fixed": fixed_line.rstrip('\n'), "auto": True}
                         continue
                         
-            if "unexpected indent" in err_msg and idx > 0:
+            # --- ИСПРАВЛЕННЫЙ БЛОК: Умное примагничивание отступов ---
+            if ("unexpected indent" in err_msg or "unindent does not match" in err_msg) and idx > 0:
                 prev_line_stripped = current_lines[idx-1].strip()
+                
+                # Если предыдущая строка должна была иметь двоеточие, но его нет - чиним его
                 if re.match(r'^(def|class|if|elif|else|for|while|try|except|finally|with|match|case)\b', prev_line_stripped) and not prev_line_stripped.endswith(':'):
                     current_lines[idx-1] = current_lines[idx-1].rstrip('\n\r') + ':\n'
                     errors_dict[idx-1] = {"original": lines[idx-1].rstrip('\n'), "fixed": current_lines[idx-1].rstrip('\n'), "auto": True}
                     continue
                 else:
-                    for prev_idx in range(idx - 1, -1, -1):
-                        if current_lines[prev_idx].strip():
-                            prev_indent = re.match(r'^(\s*)', current_lines[prev_idx]).group(1)
-                            if current_lines[prev_idx].strip().endswith(':'):
-                                prev_indent += "    "
-                            fixed_line = prev_indent + current_lines[idx].lstrip()
-                            if fixed_line != current_lines[idx]:
-                                current_lines[idx] = fixed_line
-                                errors_dict[idx] = {"original": lines[idx].rstrip('\n'), "fixed": fixed_line.rstrip('\n'), "auto": True}
-                            break
+                    bad_indent_len = len(re.match(r'^(\s*)', current_lines[idx]).group(1))
+                    fixed_line = None
+                    
+                    # Если кривой отступ (unindent), ищем ближайший родительский отступ, куда можно "упасть"
+                    if "unindent does not match" in err_msg:
+                        for prev_idx in range(idx - 1, -1, -1):
+                            if current_lines[prev_idx].strip():
+                                prev_indent_str = re.match(r'^(\s*)', current_lines[prev_idx]).group(1)
+                                if len(prev_indent_str) <= bad_indent_len:
+                                    fixed_line = prev_indent_str + current_lines[idx].lstrip()
+                                    break
+                                    
+                    # Если это "unexpected indent" или алгоритм выше ничего не нашел - копируем отступ предыдущей строки
+                    if fixed_line is None or fixed_line == current_lines[idx]:
+                        for prev_idx in range(idx - 1, -1, -1):
+                            if current_lines[prev_idx].strip():
+                                prev_indent = re.match(r'^(\s*)', current_lines[prev_idx]).group(1)
+                                if current_lines[prev_idx].strip().endswith(':'):
+                                    prev_indent += "    "
+                                fixed_line = prev_indent + current_lines[idx].lstrip()
+                                break
+                                
+                    if fixed_line and fixed_line != current_lines[idx]:
+                        current_lines[idx] = fixed_line
+                        errors_dict[idx] = {"original": lines[idx].rstrip('\n'), "fixed": fixed_line.rstrip('\n'), "auto": True}
                     continue
 
+            # Если ничего не помогло — сдаемся и просим юзера (выводим ОШИБКА)
             if not (idx in errors_dict and errors_dict[idx].get("auto")):
                 errors_dict[idx] = {"original": lines[idx].rstrip('\n'), "fixed": old_line.rstrip('\n'), "auto": False}
             break
