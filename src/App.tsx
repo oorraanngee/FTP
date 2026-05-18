@@ -132,6 +132,35 @@ export default function App() {
               </div>
             </MacWindow>
 
+            {/* Instruction Window */}
+            <MacWindow title="Instructions">
+              <div className="p-8">
+                <div className="flex flex-col gap-4">
+                  <h2 className="text-xl font-bold text-gray-900 tracking-tight">Как начать работу (Последняя версия)</h2>
+                  <ol className="list-decimal list-inside text-[#444] space-y-2 text-[15px] marker:text-blue-500 marker:font-semibold">
+                    <li>Распакуйте скачанный архив в любое удобное место.</li>
+                    <li>Запустите файл <code className="bg-gray-100 text-blue-600 px-1.5 py-0.5 rounded text-sm">ftp_main.py</code> (можно без прав администратора).</li>
+                    <li>В появившейся консоли впишите команду <code className="bg-gray-100 text-blue-600 px-1.5 py-0.5 rounded text-sm">help</code>.</li>
+                    <li>Ознакомьтесь со списком команд и начните работу!</li>
+                  </ol>
+                  
+                  <div className="mt-4 p-4 border border-blue-100 bg-blue-50/50 rounded-xl">
+                    <h3 className="font-semibold text-blue-900 mb-2 text-sm flex items-center gap-2">
+                      <Info size={16} className="text-blue-500" />
+                      Важное примечание
+                    </h3>
+                    <p className="text-sm text-gray-700 leading-relaxed mb-2">
+                      После успешного исправления, программа автоматически добавит в начало вашего скрипта комментарий:
+                    </p>
+                    <pre className="text-xs text-gray-600 bg-white p-3 rounded-lg border border-gray-200 overflow-x-auto whitespace-pre-wrap">
+                      <code># «Fix This Python» fixed this python | fix-this-python.vercel.app Fixes your Python<br/>
+# FTP v8.0 - fixed this script | fix-this-python.vercel.app Fixes your Python</code>
+                    </pre>
+                  </div>
+                </div>
+              </div>
+            </MacWindow>
+
             {/* Latest Version Window */}
             <MacWindow title="Updates & Partners">
               <div className="p-6 bg-white flex flex-col gap-6">
