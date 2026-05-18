@@ -8,7 +8,7 @@ from ftp_analyzer import analyze_and_fix
 from ftp_sandbox import run_in_sandbox
 
 CURRENT_VERSION = "v10.1"
-FIREBASE_PROJECT_ID = "fix-this-python"
+FIREBASE_PROJECT_ID = "fix-this-python"  # ВШИТО РАЗ И НАВСЕГДА
 current_dir_files = []
 
 def get_latest_version():
@@ -20,18 +20,17 @@ def get_latest_version():
             data = json.loads(response.read().decode('utf-8'))
             return data.get('fields', {}).get('latest', {}).get('stringValue', CURRENT_VERSION)
     except Exception:
-        # Если нет интернета или ошибка базы, считаем, что текущая версия актуальна
         return CURRENT_VERSION
 
-def send_error_log(error_traceback):
-    """Отправляет лог ошибки в базу Firestore"""
+def send_error_log(log_text):
+    """Отправляет лог (краш или нерешенные строки) в базу Firestore"""
     print(f"\n{COLORS['ORANGE']}Отправка лога...{COLORS['RESET']}")
     url = f"https://firestore.googleapis.com/v1/projects/{FIREBASE_PROJECT_ID}/databases/(default)/documents/error_logs"
     try:
         data = {
             "fields": {
                 "timestamp": {"stringValue": datetime.datetime.utcnow().isoformat() + "Z"},
-                "error": {"stringValue": error_traceback},
+                "error": {"stringValue": log_text},
                 "version": {"stringValue": CURRENT_VERSION}
             }
         }
@@ -45,6 +44,36 @@ def send_error_log(error_traceback):
             print(f"{COLORS['GREEN']}Лог успешно отправлен! Спасибо за помощь в улучшении программы.{COLORS['RESET']}")
     except Exception as ex:
         print(f"{COLORS['RED']}Не удалось отправить лог. Возможно, блокировка или проблема с интернетом.{COLORS['RESET']}")
+
+def ask_to_send_log(log_text, is_crash=True):
+    """Единая функция для вывода меню отправки логов Y/N/R"""
+    if is_crash:
+        print("\nХотите отправить лог ошибки разработчикам для улучшения программы?")
+    else:
+        print("\nПрограмма не смогла исправить все ошибки. Хотите отправить отчёт разработчику для улучшения алгоритмов?")
+        
+    print("[Y] - Да, отправить   [N] - Нет   [R] - Что будет отправлено и политика")
+    
+    while True:
+        key = get_key()
+        if key in ('Y', 'N', 'R'):
+            if key == 'R':
+                print(f"\n{COLORS['ORANGE']}--- ПОЛИТИКА ОТПРАВКИ ЛОГОВ ---{COLORS['RESET']}")
+                if is_crash:
+                    print("Будет отправлен исключительно технический текст сбоя (Traceback) и версия программы.")
+                    print("Никакие ваши личные файлы, исходный код ваших проектов или персональные данные НЕ передаются.")
+                else:
+                    print("Будут отправлены ТОЛЬКО проблемные строки кода (которые алгоритм не смог исправить).")
+                    print("Весь остальной исходный код вашего проекта и ваши личные данные НЕ передаются.")
+                print("Эти данные будут использоваться разработчиком исключительно для улучшения алгоритмов утилиты.")
+                print(f"{COLORS['ORANGE']}-------------------------------{COLORS['RESET']}\n")
+                print("Отправить лог? [Y] - Да, отправить   [N] - Нет")
+            elif key == 'Y':
+                send_error_log(log_text)
+                break
+            elif key == 'N':
+                print(f"{COLORS['ORANGE']}Отправка лога отменена.{COLORS['RESET']}")
+                break
 
 def update_dir_list():
     global current_dir_files
@@ -207,7 +236,15 @@ def cmd_fix(arg):
             break
         else:
             print(f"         {COLORS['RED']}Остались ошибки ({len(final_errors)} шт.){COLORS['RESET']}\n")
-            print("Нажмите Y для продолжения исправления. Нажмите N для выхода.")
+            
+            # ФОРМИРУЕМ И ПРЕДЛАГАЕМ ОТПРАВИТЬ ЛОГ О НЕДОЧЕТАХ АЛГОРИТМА
+            unresolved_log = "Unresolved errors after fix command:\n"
+            for err in final_errors:
+                unresolved_log += f"Line {err['idx'] + 1}: {err['original']}\n"
+            
+            ask_to_send_log(unresolved_log, is_crash=False)
+            
+            print("\nНажмите Y для продолжения попытки исправления. Нажмите N для выхода.")
             while True:
                 ans = get_key()
                 if ans in ('Y', 'N'): break
@@ -276,34 +313,12 @@ def main():
             break
             
         except Exception as e:
-            # Получаем полный Traceback (историю вызовов для точного понимания ошибки разработчиком)
             error_traceback = traceback.format_exc()
-            
             print(f"\n{COLORS['RED']}Критическая ошибка программы: {e}{COLORS['RESET']}")
-            
             if latest_version != CURRENT_VERSION:
                 print(f"{COLORS['ORANGE']}Попробуйте обновиться с {CURRENT_VERSION} до {latest_version} для решения проблемы. Для этого зайдите на fix-this-python.vercel.app и скачайте версию {latest_version}.{COLORS['RESET']}")
             
-            # --- БЛОК ЗАПРОСА ОТПРАВКИ ЛОГОВ ---
-            print("\nХотите отправить лог ошибки разработчикам для улучшения программы?")
-            print("[Y] - Да, отправить   [N] - Нет   [R] - Что будет отправлено и политика")
-            
-            while True:
-                key = get_key()
-                if key in ('Y', 'N', 'R'):
-                    if key == 'R':
-                        print(f"\n{COLORS['ORANGE']}--- ПОЛИТИКА ОТПРАВКИ ЛОГОВ ---{COLORS['RESET']}")
-                        print("Будет отправлен исключительно технический текст сбоя (Traceback) и версия программы.")
-                        print("Никакие ваши личные файлы, исходный код ваших проектов или персональные данные НЕ передаются.")
-                        print("Эти данные будут использоваться разработчиком только для исправления внутренних багов утилиты.")
-                        print(f"{COLORS['ORANGE']}-------------------------------{COLORS['RESET']}\n")
-                        print("Отправить лог? [Y] - Да, отправить   [N] - Нет")
-                    elif key == 'Y':
-                        send_error_log(error_traceback)
-                        break
-                    elif key == 'N':
-                        print(f"{COLORS['ORANGE']}Отправка лога отменена.{COLORS['RESET']}")
-                        break
+            ask_to_send_log(error_traceback, is_crash=True)
 
 if __name__ == "__main__":
     main()
