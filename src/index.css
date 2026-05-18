@@ -1,0 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Lucida+Grande&family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-lucida: "Lucida Grande", "Inter", sans-serif;
+}
+
+@layer utilities {
+  .aqua-titlebar {
+    background: linear-gradient(to bottom, #f2f2f2 0%, #e6e6e6 50%, #d4d4d4 51%, #e5e5e5 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(0, 0, 0, 0.15);
+  }
+  .aqua-pinstripes {
+    background-color: transparent;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 1px,
+      rgba(255, 255, 255, 0.6) 1px,
+      rgba(255, 255, 255, 0.6) 2px
+    );
+  }
+  .aqua-window {
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.1);
+  }
+  .aqua-blue-button {
+    background: linear-gradient(to bottom, #8cbcfc 0%, #60a0fb 50%, #3281fa 51%, #65a6fc 100%);
+    border: 1px solid #1a5ac9;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 2px rgba(0,0,0,0.2);
+    border-radius: 999px;
+    color: white;
+    text-shadow: 0 -1px 1px rgba(0,0,0,0.4);
+    transition: all 0.1s;
+  }
+  .aqua-blue-button:hover {
+    background: linear-gradient(to bottom, #9bc7fd 0%, #6fb6fd 50%, #3d9afc 51%, #79bcfe 100%);
+  }
+  .aqua-blue-button:active {
+    background: linear-gradient(to bottom, #4c8aff 0%, #2e73ff 50%, #0050e6 51%, #337bff 100%);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+  }
+  .osx-bg {
+    background-color: #1a5bb4;
+    background-image: 
+      radial-gradient(circle at 100% 0%, #3ca4ed 0%, transparent 40%),
+      radial-gradient(circle at 0% 100%, #1a3c75 0%, transparent 50%),
+      linear-gradient(135deg, #256ab5 0%, #11387a 100%);
+  }
+}
